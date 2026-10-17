@@ -74,8 +74,22 @@ function buildContext(state) {
 }
 
 /* ---------- offline planner ---------- */
+function daysLeftInWeek(ctx) { return Math.max(1, 8 - ctx.dayInWeek); }
+/* Per-day amount needed to still hit the weekly target, clamped to a sane range. */
+function dailyNeed(ctx, key, min, max) {
+  const left = Math.max(0, TARGETS[key] - ctx.week[key]);
+  return Math.max(min, Math.min(max, Math.ceil(left / daysLeftInWeek(ctx))));
+}
+/* Yesterday's EOD entry, only if it really is from yesterday. */
+function yesterdayEod(ctx) {
+  const e = ctx.lastEod;
+  return e && daysBetween(e.date, todayStr()) === 1 ? e : null;
+}
+
 function paceFlags(ctx) {
-  const flags = [];
+  const flags = [], y = yesterdayEod(ctx);
+  if (y && /tired|drained|exhaust|burn|overwhelm|sick/i.test(y.text)) flags.push("Yesterday's note sounds low on energy. Consider a Light day.");
+  if (y && (!y.checks.walk || !y.checks.circuit)) flags.push("Yesterday's walk or circuit was missed. Do it first today.");
   if (ctx.dayInWeek >= 3) Object.keys(TARGETS).forEach(k => {
     if (ctx.week[k] < TARGETS[k] * ctx.dayInWeek / 7 * 0.6) flags.push(TARGET_LABELS[k] + " are behind weekly pace (" + ctx.week[k] + " of " + TARGETS[k] + ").");
   });
@@ -84,20 +98,26 @@ function paceFlags(ctx) {
 
 function fallbackSchedule(ctx) {
   const B = (start, end, title, detail, type) => ({ start, end, title, detail, type });
+  const y = yesterdayEod(ctx), weak = ctx.weakAreas;
+  const india = dailyNeed(ctx, "india", 1, 5), remote = dailyNeed(ctx, "remote", 0, 3), links = dailyNeed(ctx, "linkedin", 2, 8);
+  const applyText = india + " India" + (remote ? " and " + remote + " remote" : "") + " applications, each with a tailored CV headline.";
   const learn = ctx.learn ? ctx.learn.name + ": " + ctx.learn.topic : "Revise your weakest topic";
   const proj = ctx.project.name;
-  const move = B("07:00", "07:45", "Walk and circuit", "Move first, then sit down to work.", "health");
+  const drillTrack = ["SQL", "Python", "Statistics"].find(t => weak.includes(t)) || "SQL or Python";
+  const practiceText = y && !y.checks.practice ? "Practice was skipped yesterday. Solve 4 problems against a timer." : "Solve 3 problems against a timer.";
+  const prep = "Work through today's two questions in the Interview Prep tab." + (weak.length ? " Below 50% confident: " + weak.join(", ") + "." : "");
+  const missedMove = y && (!y.checks.walk || !y.checks.circuit);
+  const move = B("07:00", "07:45", "Walk and circuit", missedMove ? "Yesterday's walk or circuit was missed. Do this before anything else." : "Move first, then sit down to work.", "health");
   const lunch = B("12:30", "13:30", "Lunch and rest", "Step away from the screen.", "rest");
-  const eod = B("21:00", "21:15", "EOD log", "Fill in the EOD Log tab and name tomorrow's first task.", "wrap");
-  const prep = "Work through today's two questions in the Interview Prep tab.";
+  const eod = B("21:00", "21:15", "EOD log", "Fill in the EOD Log tab and name tomorrow's first task." + (y && !y.checks.noLateEating ? " No late eating tonight." : ""), "wrap");
   const plans = {
     normal: [move,
       B("08:00", "09:30", "Learn", learn, "learn"),
-      B("09:45", "11:15", "Applications", "2 India and 1 remote application, each with a tailored CV headline.", "apply"),
-      B("11:15", "11:45", "LinkedIn", "Send 3 connection requests with a short note.", "network"),
+      B("09:45", "11:15", "Applications", applyText, "apply"),
+      B("11:15", "11:45", "LinkedIn", "Send " + links + " connection requests with a short note.", "network"),
       lunch,
       B("13:30", "15:00", "Project: " + proj, "Finish one concrete step and note it in the project README.", "project"),
-      B("15:15", "16:15", "SQL or Python practice", "Solve 3 problems against a timer.", "practice"),
+      B("15:15", "16:15", drillTrack + " practice", practiceText, "practice"),
       B("16:30", "17:15", "Interview prep", prep, "interview"), eod],
     interview: [move,
       B("08:00", "09:30", "Mock interview", "Answer today's questions aloud, then review the model answers.", "interview"),
@@ -105,7 +125,7 @@ function fallbackSchedule(ctx) {
       B("11:00", "12:00", "STAR stories", "Rehearse two stories: a failure and a disagreement.", "interview"),
       lunch,
       B("13:30", "14:30", "Project walkthrough: " + proj, "Explain it in 3 minutes: problem, method, result, impact.", "project"),
-      B("14:45", "15:30", "SQL warm-up", "Two medium problems to stay sharp.", "practice"),
+      B("14:45", "15:30", drillTrack + " warm-up", "Two medium problems to stay sharp.", "practice"),
       B("16:00", "16:30", "Rest and set up", "Check your link, laptop and ID. Stop early.", "rest"), eod],
     assessment: [move,
       B("08:00", "12:00", "Assessment deep work", "Read the brief twice, plan, then build. Note assumptions as you go.", "assessment"),
@@ -118,7 +138,7 @@ function fallbackSchedule(ctx) {
       B("11:30", "12:15", "Write it up", "Record decisions, metrics and trade-offs in the README.", "project"),
       lunch,
       B("13:30", "14:30", "Rehearse the story", "Explain the project in 2-minute and 5-minute versions.", "interview"),
-      B("14:45", "15:45", "Applications", "2 India and 1 remote application.", "apply"),
+      B("14:45", "15:45", "Applications", applyText, "apply"),
       B("16:00", "16:45", "Interview prep", prep, "interview"), eod],
     light: [
       B("08:00", "08:45", "Walk", "Easy movement, no phone.", "health"),
