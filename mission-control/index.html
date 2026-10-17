@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mission Control</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="top">
+    <div><h1>Mission Control</h1><p class="muted small">Job search and upskilling, one day at a time</p></div>
+    <div class="top-stats">
+      <div><span class="mono" id="hdr-day">1</span><span class="muted small">Day</span></div>
+      <div><span class="mono" id="hdr-apps">0</span><span class="muted small">Applied</span></div>
+    </div>
+  </header>
+
+  <nav class="tabs" aria-label="Sections">
+    <button class="tab active" data-act="tab" data-tab="schedule">Schedule</button>
+    <button class="tab" data-act="tab" data-tab="curriculum">Curriculum</button>
+    <button class="tab" data-act="tab" data-tab="interview">Interview Prep</button>
+    <button class="tab" data-act="tab" data-tab="eod">EOD Log</button>
+    <button class="tab" data-act="tab" data-tab="settings">Settings</button>
+  </nav>
+
+  <main>
+    <section id="tab-schedule" class="panel">
+      <div class="card"><h2>Today's mode</h2><div id="sch-modes" class="modes"></div><div id="sch-action"></div></div>
+      <div class="card"><h2>Plan</h2><div id="sch-plan"></div></div>
+    </section>
+
+    <section id="tab-curriculum" class="panel" hidden>
+      <div id="cur-list" class="stack"></div>
+    </section>
+
+    <section id="tab-interview" class="panel" hidden>
+      <div class="card"><h2>Progress</h2><div id="iv-stats"></div></div>
+      <div class="card"><h2>Today's questions</h2><div id="iv-daily" class="stack"></div></div>
+      <div class="card"><h2>Mock answer</h2><div id="iv-mock"></div></div>
+      <div class="card"><h2>STAR builder</h2><div id="iv-star"></div></div>
+      <div class="card">
+        <div class="row"><h2>Question bank</h2>
+          <select id="category-filter" aria-label="Filter by category">
+            <option value="all">All categories</option><option value="sql">SQL</option><option value="python">Python</option>
+            <option value="stats">Statistics</option><option value="behavioural">Behavioural</option>
+            <option value="case">Case study</option><option value="guesstimate">Guesstimate</option>
+          </select></div>
+        <div id="iv-bank" class="stack"></div>
+      </div>
+    </section>
+
+    <section id="tab-eod" class="panel" hidden>
+      <div class="card"><h2>Today's log</h2><div id="eod-form"></div></div>
+      <div class="card"><h2>This week</h2><div id="eod-week"></div></div>
+      <div class="card"><h2>History</h2><div id="eod-history" class="stack"></div></div>
+    </section>
+
+    <section id="tab-settings" class="panel" hidden>
+      <div class="card">
+        <h2>Anthropic API key</h2>
+        <p class="muted small">Used for schedule generation, mock feedback and the STAR builder. It stays in this browser and is never included in backups.</p>
+        <p id="key-status" class="small"></p>
+        <label class="field">API key <input type="password" id="key-input" placeholder="sk-ant-..." autocomplete="off"></label>
+        <div class="btn-row"><button class="btn primary" data-act="save-key">Save key</button><button class="btn ghost" data-act="clear-key">Remove key</button></div>
+      </div>
+      <div class="card">
+        <h2>Your data</h2>
+        <div class="btn-row">
+          <button class="btn" data-act="export">Export JSON</button>
+          <button class="btn" data-act="import-pick">Import JSON</button>
+          <input type="file" id="import-file" accept="application/json,.json" hidden>
+        </div>
+      </div>
+      <div class="card danger">
+        <h2>Reset progress</h2>
+        <p class="muted small">Clears the EOD log, weekly stats, curriculum progress, project rotation and interview history. Your API key is kept.</p>
+        <div class="btn-row"><button class="btn warn" data-act="reset">Reset progress</button></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="js/data/curriculum.js"></script>
+  <script src="js/data/projects.js"></script>
+  <script src="js/data/interview.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/interview.js"></script>
+  <script src="js/schedule.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
